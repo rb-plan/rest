@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 
@@ -53,6 +54,28 @@ func getUsers() string {
 	return usersTxt
 }
 
+func getCpuInfo() string {
+	percent, err := cpu.Percent(3*time.Millisecond, false)
+	// perPercents, _ := cpu.Percent(3*time.Millisecond, true)
+	if err != nil {
+		return ""
+	}
+
+	infos, _ := cpu.Info()
+
+	cpu_txt := ""
+	for _, info := range infos {
+		cpu_txt = info.ModelName
+		break
+	}
+
+	physicalCount, _ := cpu.Counts(false)
+	logicalCount, _ := cpu.Counts(true)
+
+	return fmt.Sprintf("syst: %s %s\ncpus: %s (%d/%d %.2f%%)",
+		runtime.GOOS, runtime.GOARCH, cpu_txt, physicalCount, logicalCount, percent[0])
+}
+
 func getMemory() string {
 
 	v, _ := mem.VirtualMemory()
@@ -74,10 +97,9 @@ func getBootTime() string {
 func getSysInfo() string {
 
 	memTotal := getMemory()
-	cpuCores := runtime.NumCPU()
 
-	return fmt.Sprintf("boot: %s\nsyst: %s %s\ncpus: %d\nmemo: %s\n",
-		getBootTime(), runtime.GOOS, runtime.GOARCH, cpuCores, memTotal)
+	return fmt.Sprintf("boot: %s\n%s\nmemo: %s\n",
+		getBootTime(), getCpuInfo(), memTotal)
 }
 
 func main() {
@@ -128,6 +150,7 @@ func main() {
 				ui.Render(pUsers)
 			case e := <-uiEvents:
 				if e.Type == ui.KeyboardEvent {
+					fmt.Println("__DEBUG_", ui.KeyboardEvent)
 					return
 				}
 			}
@@ -136,9 +159,9 @@ func main() {
 
 	// Initial rendering of the widgets
 	width, height := ui.TerminalDimensions()
-	pNetwork.SetRect(0, 0, width/2, height/2)
-	pClock.SetRect(width/2, 0, width, height/2)
-	pUsers.SetRect(0, height/2, width, height)
+	pClock.SetRect(0, 0, width/2, height/2)
+	pUsers.SetRect(width/2, 0, width, height/2)
+	pNetwork.SetRect(0, height/2, width, height)
 
 	ui.Render(pNetwork, pClock, pUsers)
 
