@@ -159,8 +159,8 @@ func main() {
 
 	// Initial rendering of the widgets
 	width, height := ui.TerminalDimensions()
-	pClock.SetRect(0, 0, width/2, height/2)
-	pUsers.SetRect(width/2, 0, width, height/2)
+	pClock.SetRect(0, 0, width*2/3, height/2)
+	pUsers.SetRect(width*2/3, 0, width, height/2)
 	pNetwork.SetRect(0, height/2, width, height)
 
 	ui.Render(pNetwork, pClock, pUsers)
