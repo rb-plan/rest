@@ -150,7 +150,6 @@ func main() {
 				ui.Render(pUsers)
 			case e := <-uiEvents:
 				if e.Type == ui.KeyboardEvent {
-					fmt.Println("__DEBUG_", ui.KeyboardEvent)
 					return
 				}
 			}
