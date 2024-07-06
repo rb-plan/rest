@@ -65,7 +65,7 @@ func getCpuInfo() string {
 
 	cpu_txt := ""
 	for _, info := range infos {
-		cpu_txt = info.ModelName
+		cpu_txt = fmt.Sprintf("%s %s", info.VendorID, info.ModelName)
 		break
 	}
 
