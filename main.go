@@ -52,11 +52,8 @@ func getUsers() string {
 }
 
 func getCpuInfo() string {
-	percent, err := cpu.Percent(3*time.Millisecond, false)
-	// perPercents, _ := cpu.Percent(3*time.Millisecond, true)
-	if err != nil {
-		return ""
-	}
+
+	percent, _ := cpu.Percent(3*time.Millisecond, false)
 
 	infos, _ := cpu.Info()
 
@@ -75,20 +72,17 @@ func getCpuInfo() string {
 	sensors, _ := host.SensorsTemperatures()
 
 	// raspberry pi cpu Temperature
-	sensor_txt := ""
+	t := ""
 	for _, sensor := range sensors {
 		if sensor.SensorKey == "cpu_thermal_input" {
-			sensor_txt = fmt.Sprintf(" %.2f°C", sensor.Temperature)
+			t = fmt.Sprintf("%.2f°C ", sensor.Temperature)
 		}
 	}
 
-	h, err := host.Info()
-	if err != nil {
-		return ""
-	}
+	h, _ := host.Info()
 
-	return fmt.Sprintf("syst: %s %s %s (%s-%s)\ncpus: %s\ncore: %d/%d %6.2f%%%s",
-		h.Platform, h.PlatformVersion, h.KernelArch, h.OS, h.KernelVersion, u, physicalCount, logicalCount, percent[0], sensor_txt)
+	return fmt.Sprintf("syst: %s %s %s (%s-%s)\ncpus: %s\ncore: %d/%d (%s%.2f%%)",
+		h.Platform, h.PlatformVersion, h.KernelArch, h.OS, h.KernelVersion, u, physicalCount, logicalCount, t, percent[0])
 }
 
 func getMemory() string {
@@ -158,8 +152,8 @@ func main() {
 				ui.Render(pClock)
 				pUsers.Text = getUsers()
 				ui.Render(pUsers)
-				pNetwork.Text = getNetworkInterfaces()
-				ui.Render(pNetwork)
+				// pNetwork.Text = getNetworkInterfaces()
+				// ui.Render(pNetwork)
 			case e := <-uiEvents:
 				if e.Type == ui.KeyboardEvent {
 					return
