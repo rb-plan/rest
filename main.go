@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/shirou/gopsutil/cpu"
@@ -61,24 +60,42 @@ func getCpuInfo() string {
 
 	infos, _ := cpu.Info()
 
-	cpu_txt := ""
+	u := ""
 	for _, info := range infos {
-		cpu_txt = fmt.Sprintf("%s %s", info.VendorID, info.ModelName)
+		if len(info.ModelName) > 0 {
+			u = fmt.Sprintf("%s", info.ModelName)
+		} else {
+			u = fmt.Sprintf("%s", info.VendorID)
+		}
 		break
 	}
 
 	physicalCount, _ := cpu.Counts(false)
 	logicalCount, _ := cpu.Counts(true)
+	sensors, _ := host.SensorsTemperatures()
 
-	return fmt.Sprintf("syst: %s %s\ncpus: %s (%d/%d %.2f%%)",
-		runtime.GOOS, runtime.GOARCH, cpu_txt, physicalCount, logicalCount, percent[0])
+	// raspberry pi cpu Temperature
+	sensor_txt := ""
+	for _, sensor := range sensors {
+		if sensor.SensorKey == "cpu_thermal_input" {
+			sensor_txt = fmt.Sprintf(" %.2f°C", sensor.Temperature)
+		}
+	}
+
+	h, err := host.Info()
+	if err != nil {
+		return ""
+	}
+
+	return fmt.Sprintf("syst: %s %s %s (%s-%s)\ncpus: %s\ncore: %d/%d %6.2f%%%s",
+		h.Platform, h.PlatformVersion, h.KernelArch, h.OS, h.KernelVersion, u, physicalCount, logicalCount, percent[0], sensor_txt)
 }
 
 func getMemory() string {
 
 	v, _ := mem.VirtualMemory()
 
-	return fmt.Sprintf("%v Bytes (%f%%)", v.Total, v.UsedPercent)
+	return fmt.Sprintf("%v Bytes (%.2f%%)", v.Total, v.UsedPercent)
 }
 
 func getBootTime() string {

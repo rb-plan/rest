@@ -8,6 +8,9 @@ export GO111MODULE=on
 # Build for arm64-linux
 GOARCH=arm64 GOOS=linux go build -o target/rest-arm64-linux main.go
 
+# Build for arm-linux
+GOARCH=arm GOOS=linux go build -o target/rest-arm-linux main.go
+
 # Build for arm64-freebsd
 GOARCH=arm64 GOOS=freebsd go build -o target/rest-arm64-freebsd main.go
 
