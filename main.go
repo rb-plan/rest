@@ -16,23 +16,23 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
-func getNetworkInterfaces() (string, error) {
+func getNetworkInterfaces() string {
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		return "", err
+		return ""
 	}
 
 	var result string
 	for _, iface := range interfaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
-			return "", err
+			return ""
 		}
 		for _, addr := range addrs {
 			result += fmt.Sprintf("%s: %s\n", iface.Name, addr.String())
 		}
 	}
-	return result, nil
+	return result
 }
 
 func getCurrentTime() string {
@@ -42,16 +42,14 @@ func getCurrentTime() string {
 func getUsers() string {
 
 	hostname, _ := os.Hostname()
-	usersTxt := fmt.Sprintf("%s\n", hostname)
+	result := fmt.Sprintf("%s\n", hostname)
 	users, _ := host.Users()
 
 	for _, user := range users {
 		// data, _ := json.MarshalIndent(user, "", " ")
-		// usersTxt += string(data)
-
-		usersTxt += fmt.Sprintf("%s@%s %s %s\n", user.User, user.Host, user.Terminal, time.Unix(int64(user.Started), 0).Format("2006-01-02 15:04:05"))
+		result += fmt.Sprintf("%s@%s %s %s\n", user.User, user.Host, user.Terminal, time.Unix(int64(user.Started), 0).Format("2006-01-02 15:04:05"))
 	}
-	return usersTxt
+	return result
 }
 
 func getCpuInfo() string {
@@ -108,18 +106,13 @@ func main() {
 	}
 	defer ui.Close()
 
-	networkInfo, err := getNetworkInterfaces()
-	if err != nil {
-		log.Fatalf("failed to get network interfaces: %v", err)
-	}
-
 	// Create a paragraph for the network interfaces
 	pNetwork := widgets.NewParagraph()
 	pNetwork.Title = "Network Interfaces"
 	pNetwork.BorderStyle.Fg = ui.ColorRed
 	pNetwork.TitleStyle.Fg = ui.ColorRed
 	pNetwork.TextStyle.Fg = ui.ColorRed
-	pNetwork.Text = networkInfo
+	pNetwork.Text = getNetworkInterfaces()
 
 	// Create a paragraph for the clock
 	pClock := widgets.NewParagraph()
@@ -148,6 +141,8 @@ func main() {
 				ui.Render(pClock)
 				pUsers.Text = getUsers()
 				ui.Render(pUsers)
+				pNetwork.Text = getNetworkInterfaces()
+				ui.Render(pNetwork)
 			case e := <-uiEvents:
 				if e.Type == ui.KeyboardEvent {
 					return
