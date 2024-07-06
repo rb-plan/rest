@@ -55,14 +55,15 @@ func getCpuInfo() string {
 
 	percent, _ := cpu.Percent(3*time.Millisecond, false)
 
-	infos, _ := cpu.Info()
+	h, _ := host.Info()
 
+	infos, _ := cpu.Info()
 	u := ""
 	for _, info := range infos {
 		if len(info.ModelName) > 0 {
 			u = fmt.Sprintf("%s", info.ModelName)
 		} else {
-			u = fmt.Sprintf("%s", info.VendorID)
+			u = fmt.Sprintf("%s", h.KernelArch)
 		}
 		break
 	}
@@ -79,10 +80,8 @@ func getCpuInfo() string {
 		}
 	}
 
-	h, _ := host.Info()
-
-	return fmt.Sprintf("syst: %s %s %s (%s-%s)\ncpus: %s\ncore: %d/%d (%s%.2f%%)",
-		h.Platform, h.PlatformVersion, h.KernelArch, h.OS, h.KernelVersion, u, physicalCount, logicalCount, t, percent[0])
+	return fmt.Sprintf("name: %s %s\nos  : %s-%s\ncpu : %s\ncore: %d/%d (%s%.2f%%)",
+		h.Platform, h.PlatformVersion, h.OS, h.KernelVersion, u, physicalCount, logicalCount, t, percent[0])
 }
 
 func getMemory() string {
@@ -107,7 +106,7 @@ func getSysInfo() string {
 
 	memTotal := getMemory()
 
-	return fmt.Sprintf("boot: %s\n%s\nmemo: %s\n",
+	return fmt.Sprintf("boot: %s\n%s\nram : %s\n",
 		getBootTime(), getCpuInfo(), memTotal)
 }
 
@@ -152,8 +151,8 @@ func main() {
 				ui.Render(pClock)
 				pUsers.Text = getUsers()
 				ui.Render(pUsers)
-				// pNetwork.Text = getNetworkInterfaces()
-				// ui.Render(pNetwork)
+			// pNetwork.Text = getNetworkInterfaces()
+			// ui.Render(pNetwork)
 			case e := <-uiEvents:
 				if e.Type == ui.KeyboardEvent {
 					return
