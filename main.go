@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
@@ -38,16 +40,64 @@ func getCurrentTime() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
+func IntToString(orig []int8) string {
+	ret := make([]byte, len(orig))
+	size := -1
+	for i, o := range orig {
+		if o == 0 {
+			size = i
+			break
+		}
+		ret[i] = byte(o)
+	}
+	if size == -1 {
+		size = len(orig)
+	}
+
+	return string(ret[0:size])
+}
+
 func getUsers() string {
 
 	hostname, _ := os.Hostname()
 	result := fmt.Sprintf("%s\n", hostname)
-	users, _ := host.Users()
+	h, _ := host.Info()
 
-	for _, user := range users {
-		// data, _ := json.MarshalIndent(user, "", " ")
-		result += fmt.Sprintf("%s@%s %s %s\n", user.User, user.Host, user.Terminal, time.Unix(int64(user.Started), 0).Format("2006-01-02 15:04:05"))
+	if h.KernelArch == "aarch64" {
+		file, _ := os.Open("/var/run/utmp")
+		defer file.Close()
+
+		stat, _ := file.Stat()
+
+		buf := make([]byte, stat.Size())
+		file.Read(buf)
+		count := len(buf) / sizeOfUtmp
+
+		for i := 0; i < count; i++ {
+			b := buf[i*sizeOfUtmp : (i+1)*sizeOfUtmp]
+
+			var u utmp
+			br := bytes.NewReader(b)
+			err := binary.Read(br, binary.LittleEndian, &u)
+			if err != nil {
+				continue
+			}
+			if u.Type != 7 {
+				continue
+			}
+
+			result += fmt.Sprintf("%s@%s %s\n", IntToString(u.User[:]), IntToString(u.Host[:]), IntToString(u.Line[:]))
+		}
+
+	} else {
+		users, _ := host.Users()
+		for _, user := range users {
+			// data, _ := json.MarshalIndent(user, "", " ")
+			// result += fmt.Sprintf("%s@%s %s %s\n", user.User, user.Host, user.Terminal, time.Unix(int64(user.Started), 0).Format("0102 15:04:05"))
+			result += fmt.Sprintf("%s@%s %s %s\n", user.User, user.Host, user.Terminal)
+		}
 	}
+
 	return result
 }
 
@@ -88,7 +138,7 @@ func getMemory() string {
 
 	v, _ := mem.VirtualMemory()
 
-	return fmt.Sprintf("%v Bytes (%.2f%%)", v.Total, v.UsedPercent)
+	return fmt.Sprintf("%v Bytes\nused: %.2f%%", v.Total, v.UsedPercent)
 }
 
 func getBootTime() string {
@@ -163,8 +213,8 @@ func main() {
 
 	// Initial rendering of the widgets
 	width, height := ui.TerminalDimensions()
-	pClock.SetRect(0, 0, width*2/3, height/2)
-	pUsers.SetRect(width*2/3, 0, width, height/2)
+	pClock.SetRect(0, 0, width*1/2, height/2)
+	pUsers.SetRect(width*1/2, 0, width, height/2)
 	pNetwork.SetRect(0, height/2, width, height)
 
 	ui.Render(pNetwork, pClock, pUsers)
