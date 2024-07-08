@@ -138,7 +138,7 @@ func getMemory() string {
 
 	v, _ := mem.VirtualMemory()
 
-	return fmt.Sprintf("%v Bytes\nused: %.2f%%", v.Total, v.UsedPercent)
+	return fmt.Sprintf("%d/%d MB (%.2f%%)", v.Active/1024/1024, v.Total/1024/1024, v.UsedPercent)
 }
 
 func getBootTime() string {
